@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>じょしハンコ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Direction: washi paper, sumi ink, vermilion hanko stamps. Layout: one centered column, stamps pressed into a blank. */
+:root{
+  --paper:#f3ecdc;
+  --paper-2:#ebe2cc;
+  --ink:#1d1b19;
+  --ink-soft:#5b554b;
+  --shu:#c63a22;
+  --shu-dark:#8f2615;
+  --good:#2f7a4a;
+  --line:#d3c7ac;
+  --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-weight:500;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .28  0 0 0 0 .18  0 0 0 .08 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  -webkit-text-size-adjust:100%;
+}
+.app{max-width:640px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px;min-height:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible+label{outline:3px solid var(--ink);outline-offset:3px}
+ruby rt{font-size:.42em;font-weight:500;letter-spacing:0}
+.sr{position:absolute;left:-9999px}
+
+/* start */
+.title{margin:18px 0 0;display:flex;align-items:center;gap:14px}
+.seal{flex:none;width:76px;height:76px;border-radius:12px;background:var(--shu);color:var(--paper);display:grid;place-items:center;font:800 34px/1 var(--display);transform:rotate(-6deg);box-shadow:0 4px 0 var(--shu-dark)}
+h1{margin:0;font:800 clamp(34px,9vw,48px)/1.05 var(--display);letter-spacing:.04em;text-wrap:balance}
+.tag{margin:0;color:var(--ink-soft);font-size:15px;line-height:1.6}
+.rules{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.rules li{display:flex;gap:12px;align-items:baseline;font-size:15px;line-height:1.6}
+.rules b{flex:none;width:1.6em;height:1.6em;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:13px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:0;padding:0;margin:0}
+.modes legend{font-size:14px;color:var(--ink-soft);margin-bottom:8px;padding:0}
+.modes input{position:absolute;opacity:0}
+.modes label{display:block;border:2px solid var(--line);border-radius:12px;padding:12px;background:var(--paper-2);cursor:pointer;line-height:1.4}
+.modes label strong{display:block;font-size:17px}
+.modes label span{font-size:13px;color:var(--ink-soft)}
+.modes input:checked+label{border-color:var(--ink);background:#fffaf0;box-shadow:0 3px 0 var(--ink)}
+.go{border:0;border-radius:14px;background:var(--shu);color:var(--paper);font:800 22px/1 var(--display);padding:18px;letter-spacing:.1em;box-shadow:0 5px 0 var(--shu-dark)}
+.go:active{transform:translateY(4px);box-shadow:0 1px 0 var(--shu-dark)}
+.ghost{border:2px solid var(--ink);background:transparent;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px}
+.best{margin:0;font-size:14px;color:var(--ink-soft);text-align:center}
+
+/* play */
+.hud{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center}
+.hud .q{font:800 18px/1 var(--display)}
+.hud .q small{font:500 14px var(--body);color:var(--ink-soft)}
+.hud .score{font:800 22px/1 var(--display);text-align:right;font-variant-numeric:tabular-nums}
+.hud .score small{font:500 12px var(--body);color:var(--ink-soft);margin-left:3px}
+.lives{display:flex;gap:6px}
+.lives i{width:16px;height:16px;border-radius:50%;background:var(--shu);box-shadow:0 2px 0 var(--shu-dark)}
+.lives i.off{background:transparent;border:2px solid var(--line);box-shadow:none}
+.combo{font-size:14px;font-weight:700;text-align:right;color:var(--shu-dark);min-height:1.2em}
+.prog{grid-column:1/-1;display:flex;gap:4px}
+.prog i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.prog i.done{background:var(--ink)}
+.prog i.now{background:var(--shu)}
+.timer{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--ink);transform-origin:left;transition:transform .1s linear}
+.timer.low i{background:var(--shu)}
+.card{background:#fffaf0;border:2px solid var(--ink);border-radius:16px;padding:22px 16px 16px;box-shadow:0 5px 0 var(--ink)}
+.card.shake{animation:shake .4s}
+.sentence{margin:0;font:700 clamp(25px,6.6vw,34px)/2.3 var(--body);text-wrap:balance}
+.blank{display:inline-block;min-width:1.5em;height:1.5em;line-height:1.5em;margin:0 .1em;border:2.5px dashed var(--shu);border-radius:8px;text-align:center;vertical-align:middle;font-family:var(--display);font-weight:800}
+.blank.on{border-style:solid;background:var(--shu);color:var(--paper);padding:0 .25em;transform:rotate(-4deg);animation:stamp .35s ease-out;box-shadow:0 3px 0 var(--shu-dark)}
+.blank.on.bad{background:var(--ink-soft);border-color:var(--ink-soft);box-shadow:none;text-decoration:line-through;text-decoration-thickness:3px}
+.blank.on.ok{background:var(--good);border-color:var(--good);box-shadow:0 3px 0 #1d4f2f}
+.en{margin:2px 0 0;font-size:15px;color:var(--ink-soft);line-height:1.5}
+.hints{list-style:none;margin:10px 0 0;padding:12px 0 0;border-top:1px dashed var(--line);display:flex;flex-wrap:wrap;gap:8px}
+.hints li{font-size:15px;background:var(--paper-2);border-radius:999px;padding:4px 12px 4px 10px;line-height:1.9}
+.hints li em{font-style:normal;color:var(--ink-soft);margin-left:6px;font-size:14px}
+.cluebox{min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.cluebox p{margin:0;font-size:15px;line-height:1.5;flex:1 1 220px}
+.stamps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.stamp{position:relative;aspect-ratio:1;border:0;border-radius:12px;background:var(--shu);color:var(--paper);font:800 clamp(22px,6vw,32px)/1 var(--display);box-shadow:0 5px 0 var(--shu-dark);transition:transform .08s,box-shadow .08s}
+.stamp:nth-child(odd){transform:rotate(-1.5deg)}
+.stamp:nth-child(even){transform:rotate(1.5deg)}
+.stamp.long{font-size:clamp(16px,4.4vw,24px)}
+.stamp .k{position:absolute;top:5px;left:8px;font:500 11px var(--body);opacity:.75}
+.stamp:hover:not(:disabled){filter:brightness(1.07)}
+.stamp:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--shu-dark)}
+.stamp:disabled{cursor:default;opacity:.35;box-shadow:none}
+.stamp.right{opacity:1;background:var(--good);box-shadow:0 5px 0 #1d4f2f}
+.stamp.wrong{opacity:.6;background:var(--ink-soft);box-shadow:none}
+.panel{min-height:0}
+.res{border-radius:14px;padding:14px 16px;background:var(--paper-2);border-left:6px solid var(--ink);display:grid;gap:8px}
+.res.good{border-left-color:var(--good)}
+.res h2{margin:0;font:800 22px/1.2 var(--display)}
+.res.good h2{color:var(--good)}
+.res p{margin:0;font-size:15px;line-height:1.7}
+.res mark{background:transparent;color:var(--good);font-weight:700;border-bottom:3px solid var(--good)}
+.next{justify-self:stretch;border:0;border-radius:12px;background:var(--ink);color:var(--paper);font:800 18px/1 var(--display);padding:15px;letter-spacing:.08em;margin-top:4px}
+
+/* end */
+.end h2{margin:0;font:800 clamp(28px,8vw,38px)/1.15 var(--display)}
+.rank{display:flex;align-items:center;gap:14px}
+.big{font:800 52px/1 var(--display);font-variant-numeric:tabular-nums}
+.sub{margin:0;color:var(--ink-soft);font-size:15px;line-height:1.6}
+.bars{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.bars li{display:grid;grid-template-columns:2.8em 1fr 3.2em;gap:10px;align-items:center;font-size:15px}
+.bars b{font:800 20px var(--display)}
+.bars .tr{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.bars .tr i{display:block;height:100%;background:var(--shu);border-radius:6px}
+.bars .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.miss{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.miss li{background:#fffaf0;border:2px solid var(--line);border-radius:12px;padding:6px 14px;font:700 19px/2.1 var(--body)}
+.miss mark{background:transparent;color:var(--good);border-bottom:3px solid var(--good)}
+h3{margin:6px 0 0;font:800 18px/1.3 var(--display)}
+.row{display:grid;gap:10px}
+
+@keyframes stamp{0%{transform:scale(2) rotate(-14deg);opacity:0}60%{transform:scale(.9) rotate(-4deg);opacity:1}100%{transform:scale(1) rotate(-4deg)}}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:380px){.stamps{gap:6px}.stamp .k{display:none}.seal{width:60px;height:60px;font-size:27px}}
+</style>
+</head>
+<body>
+<main class="app" id="app"></main>
+
+<script>
+/* ---------- もんだい ---------- */
+/* [ぶん, こたえ, ことばのヒント, ぶんぽうのヒント]  {漢字|かな} = ふりがな, [] = ブランク */
+const P=['は','が','を','で','に','と','から','まで','も','の'];
+const RAW=[
+/* は */
+['わたし[]{学生|がくせい}です。','は',[['{学生|がくせい}','student']],'Topic of the sentence: “As for me…”','I am a student.'],
+['{今日|きょう}[]{月曜日|げつようび}です。','は',[['{今日|きょう}','today'],['{月曜日|げつようび}','Monday']],'Topic of the sentence: “As for today…”','Today is Monday.'],
+['これ[]わたしの{本|ほん}です。','は',[['{本|ほん}','book']],'Topic of the sentence: “As for this…”','This is my book.'],
+['{田中|たなか}さん[]{先生|せんせい}ですか。','は',[['{先生|せんせい}','teacher']],'Topic of a question: “Is Mr. Tanaka…?”','Is Mr. Tanaka a teacher?'],
+['{誕生日|たんじょうび}[]いつですか。','は',[['{誕生日|たんじょうび}','birthday'],['いつ','when']],'Topic of a question: “As for your birthday, when…?”','When is your birthday?'],
+['あの{人|ひと}[]だれですか。','は',[['{人|ひと}','person'],['だれ','who']],'Topic of a question: “As for that person, who…?”','Who is that person?'],
+/* が */
+['あそこに{犬|いぬ}[]います。','が',[['あそこ','over there'],['{犬|いぬ}','dog'],['います','there is (living thing)']],'The thing that exists (います / あります) takes が.','There is a dog over there.'],
+['{部屋|へや}に{机|つくえ}[]あります。','が',[['{部屋|へや}','room'],['{机|つくえ}','desk'],['あります','there is (thing)']],'The thing that exists (います / あります) takes が.','There is a desk in the room.'],
+['だれ[]{来|き}ましたか。','が',[['だれ','who'],['{来|き}ました','came']],'A question word as the subject (“Who…?”) takes が.','Who came?'],
+['わたしは{猫|ねこ}[]すきです。','が',[['{猫|ねこ}','cat'],['すき','like']],'The thing you like takes が (すき, きらい, ほしい).','I like cats.'],
+['どの{色|いろ}[]すきですか。','が',[['どの','which'],['{色|いろ}','color'],['すき','like']],'The thing you like takes が (すき, きらい, ほしい).','Which color do you like?'],
+['{雨|あめ}[]ふっています。','が',[['{雨|あめ}','rain'],['ふっています','is falling']],'Weather or an event happening in front of you takes が.','It is raining.'],
+/* を */
+['{毎朝|まいあさ}パン[]{食|た}べます。','を',[['{毎朝|まいあさ}','every morning'],['{食|た}べます','eat']],'The object of an action (eat, read, watch…) takes を.','I eat bread every morning.'],
+['{本|ほん}[]{読|よ}みます。','を',[['{本|ほん}','book'],['{読|よ}みます','read']],'The object of an action (eat, read, watch…) takes を.','I read a book.'],
+['{音楽|おんがく}[]{聞|き}きます。','を',[['{音楽|おんがく}','music'],['{聞|き}きます','listen']],'The object of an action takes を.','I listen to music.'],
+['{昨日|きのう}、{映画|えいが}[]{見|み}ました。','を',[['{昨日|きのう}','yesterday'],['{映画|えいが}','movie'],['{見|み}ました','watched']],'The object of an action takes を.','I watched a movie yesterday.'],
+['{水|みず}[]{飲|の}みます。','を',[['{水|みず}','water'],['{飲|の}みます','drink']],'The object of an action (drink, eat…) takes を.','I drink water.'],
+['{手紙|てがみ}[]{書|か}きました。','を',[['{手紙|てがみ}','letter'],['{書|か}きました','wrote']],'The object of an action takes を.','I wrote a letter.'],
+/* で */
+['{図書館|としょかん}[]{勉強|べんきょう}します。','で',[['{図書館|としょかん}','library'],['{勉強|べんきょう}します','study']],'The place where an action happens takes で.','I study at the library.'],
+['{電車|でんしゃ}[]{学校|がっこう}に{行|い}きます。','で',[['{電車|でんしゃ}','train'],['{学校|がっこう}','school'],['{行|い}きます','go']],'Means of transportation: “by train”.','I go to school by train.'],
+['レストラン[]ごはんを{食|た}べます。','で',[['ごはん','meal'],['{食|た}べます','eat']],'The place where an action happens takes で.','I eat a meal at a restaurant.'],
+['はし[]{食|た}べます。','で',[['はし','chopsticks'],['{食|た}べます','eat']],'A tool or method: “with chopsticks”.','I eat with chopsticks.'],
+['{日本語|にほんご}[]{話|はな}します。','で',[['{日本語|にほんご}','Japanese'],['{話|はな}します','speak']],'A language or method used: “in Japanese”.','I speak in Japanese.'],
+['{駅|えき}[]{友達|ともだち}に{会|あ}いました。','で',[['{駅|えき}','station'],['{友達|ともだち}','friend'],['{会|あ}いました','met']],'The place where an action happens takes で.','I met a friend at the station.'],
+['ペン[]{名前|なまえ}を{書|か}きます。','で',[['ペン','pen'],['{名前|なまえ}','name'],['{書|か}きます','write']],'A tool: “with a pen”.','I write my name with a pen.'],
+/* に */
+['{七時|しちじ}[]{起|お}きます。','に',[['{七時|しちじ}','7 o’clock'],['{起|お}きます','wake up']],'A specific clock time takes に.','I wake up at 7 o’clock.'],
+['{十時|じゅうじ}[]ねます。','に',[['{十時|じゅうじ}','10 o’clock'],['ねます','go to bed']],'A specific clock time takes に.','I go to bed at 10 o’clock.'],
+['{友達|ともだち}[]プレゼントをあげます。','に',[['{友達|ともだち}','friend'],['プレゼント','present'],['あげます','give']],'The person who receives something takes に.','I give a present to a friend.'],
+['{家|いえ}[]{帰|かえ}ります。','に',[['{家|いえ}','home'],['{帰|かえ}ります','return']],'The destination of go / come / return takes に.','I return home.'],
+['{大学|だいがく}[]{行|い}きます。','に',[['{大学|だいがく}','university'],['{行|い}きます','go']],'The destination of go / come / return takes に.','I go to the university.'],
+['いすの{上|うえ}[]{猫|ねこ}がいます。','に',[['いす','chair'],['{上|うえ}','on top'],['{猫|ねこ}','cat']],'The place where something exists (います / あります) takes に.','There is a cat on the chair.'],
+['{日本|にほん}[]{住|す}んでいます。','に',[['{日本|にほん}','Japan'],['{住|す}んでいます','live (in)']],'The place where you live takes に.','I live in Japan.'],
+/* と */
+['{友達|ともだち}[]いっしょに{映画|えいが}を{見|み}ます。','と',[['{友達|ともだち}','friend'],['いっしょに','together'],['{映画|えいが}','movie']],'Together with someone: “with a friend”.','I watch a movie together with a friend.'],
+['{妹|いもうと}[]いっしょに{買|か}い{物|もの}に{行|い}きます。','と',[['{妹|いもうと}','younger sister'],['{買|か}い{物|もの}','shopping']],'Together with someone: “with my sister”.','I go shopping together with my younger sister.'],
+['りんご[]バナナを{買|か}いました。','と',[['りんご','apple'],['バナナ','banana'],['{買|か}いました','bought']],'Connects nouns: “apples and bananas”.','I bought apples and bananas.'],
+['{私|わたし}は{肉|にく}[]{魚|さかな}がすきです。','と',[['{肉|にく}','meat'],['{魚|さかな}','fish'],['すき','like']],'Connects nouns: “meat and fish”.','I like meat and fish.'],
+['{田中|たなか}さん[]{山田|やまだ}さんは{先生|せんせい}です。','と',[['{先生|せんせい}','teacher']],'Connects nouns: “Mr. Tanaka and Ms. Yamada”.','Mr. Tanaka and Ms. Yamada are teachers.'],
+['{家族|かぞく}[]{晩|ばん}ごはんを{食|た}べます。','と',[['{家族|かぞく}','family'],['{晩|ばん}ごはん','dinner']],'Together with someone: “with my family”.','I eat dinner with my family.'],
+/* から */
+['{朝|あさ}[]{晩|ばん}まで{働|はたら}きます。','から',[['{朝|あさ}','morning'],['{晩|ばん}','evening'],['{働|はたら}きます','work']],'Starting point: “from morning until evening”.','I work from morning until evening.'],
+['{月曜日|げつようび}[]{金曜日|きんようび}まで{学校|がっこう}です。','から',[['{月曜日|げつようび}','Monday'],['{金曜日|きんようび}','Friday']],'Starting point: “from Monday to Friday”.','School is from Monday to Friday.'],
+['ここ[]{駅|えき}まで{何分|なんぷん}ですか。','から',[['ここ','here'],['{駅|えき}','station'],['{何分|なんぷん}','how many minutes']],'Starting point: “from here to the station”.','How many minutes is it from here to the station?'],
+['{授業|じゅぎょう}は{九時|くじ}[]{十二時|じゅうにじ}までです。','から',[['{授業|じゅぎょう}','class'],['{九時|くじ}','9 o’clock'],['{十二時|じゅうにじ}','12 o’clock']],'Starting time: “from 9 until 12”.','Class is from 9 until 12.'],
+/* まで */
+['{図書館|としょかん}は{九時|くじ}から{五時|ごじ}[]です。','まで',[['{図書館|としょかん}','library'],['{五時|ごじ}','5 o’clock']],'End point: “from 9 until 5”.','The library is open from 9 until 5.'],
+['{家|いえ}から{駅|えき}[]{十分|じゅっぷん}です。','まで',[['{家|いえ}','home'],['{駅|えき}','station'],['{十分|じゅっぷん}','10 minutes']],'End point: “from home to the station”.','It takes 10 minutes from home to the station.'],
+['{朝|あさ}から{夜|よる}[]{勉強|べんきょう}しました。','まで',[['{朝|あさ}','morning'],['{夜|よる}','night'],['{勉強|べんきょう}しました','studied']],'End point: “from morning until night”.','I studied from morning until night.'],
+['{月曜日|げつようび}から{金曜日|きんようび}[]{働|はたら}きます。','まで',[['{月曜日|げつようび}','Monday'],['{金曜日|きんようび}','Friday'],['{働|はたら}きます','work']],'End point: “from Monday until Friday”.','I work from Monday to Friday.'],
+['{駅|えき}から{学校|がっこう}[]{歩|ある}きます。','まで',[['{駅|えき}','station'],['{学校|がっこう}','school'],['{歩|ある}きます','walk']],'End point: “from the station to school”.','I walk from the station to school.'],
+/* も */
+['{田中|たなか}さんは{学生|がくせい}です。わたし[]{学生|がくせい}です。','も',[['{学生|がくせい}','student']],'“Also / too”: adds the same thing again (replaces は / が / を).','Mr. Tanaka is a student. I am a student, too.'],
+['{私|わたし}は{犬|いぬ}がすきです。{猫|ねこ}[]すきです。','も',[['{犬|いぬ}','dog'],['{猫|ねこ}','cat'],['すき','like']],'“Also / too”: adds the same thing again (replaces は / が / を).','I like dogs. I like cats, too.'],
+['{私|わたし}はコーヒーを{飲|の}みます。{紅茶|こうちゃ}[]{飲|の}みます。','も',[['コーヒー','coffee'],['{紅茶|こうちゃ}','black tea'],['{飲|の}みます','drink']],'“Also / too”: adds the same thing again (replaces は / が / を).','I drink coffee. I drink black tea, too.'],
+['{昨日|きのう}は{雨|あめ}でした。{今日|きょう}[]{雨|あめ}です。','も',[['{昨日|きのう}','yesterday'],['{雨|あめ}','rain'],['{今日|きょう}','today']],'“Also / too”: the same thing happens again.','Yesterday was rainy. Today is rainy, too.'],
+['{私|わたし}は{日本|にほん}に{行|い}きます。{友達|ともだち}[]{行|い}きます。','も',[['{日本|にほん}','Japan'],['{友達|ともだち}','friend'],['{行|い}きます','go']],'“Also / too”: someone else does the same thing.','I am going to Japan. My friend is going, too.'],
+['ここに{山田|やまだ}さんがいます。{田中|たなか}さん[]います。','も',[['ここ','here'],['います','is (here)']],'“Also / too”: someone else is also there.','Ms. Yamada is here. Mr. Tanaka is here, too.'],
+/* の */
+['これは{私|わたし}[]{本|ほん}です。','の',[['{本|ほん}','book']],'Possession: “A の B” = A’s B (“my book”).','This is my book.'],
+['{田中|たなか}さん[]{車|くるま}はあそこです。','の',[['{車|くるま}','car'],['あそこ','over there']],'Possession: “A の B” = A’s B (“Mr. Tanaka’s car”).','Mr. Tanaka’s car is over there.'],
+['{先生|せんせい}[]{名前|なまえ}は{田中|たなか}です。','の',[['{先生|せんせい}','teacher'],['{名前|なまえ}','name']],'Possession: “A の B” = A’s B (“the teacher’s name”).','The teacher’s name is Tanaka.'],
+['{私|わたし}は{日本語|にほんご}[]{先生|せんせい}です。','の',[['{日本語|にほんご}','Japanese'],['{先生|せんせい}','teacher']],'Describes the noun: “A の B” = a B of / about A (“Japanese teacher”).','I am a Japanese teacher.'],
+['{私|わたし}は{大学|だいがく}[]{学生|がくせい}です。','の',[['{大学|だいがく}','university'],['{学生|がくせい}','student']],'Describes the noun: “A の B” (“university student”).','I am a university student.'],
+['これは{何|なん}[]{本|ほん}ですか。','の',[['{何|なん}','what'],['{本|ほん}','book']],'Describes the noun: “what kind of book?”','What kind of book is this?'],
+['{私|わたし}は{日本|にほん}[]{食|た}べ{物|もの}がすきです。','の',[['{日本|にほん}','Japan'],['{食|た}べ{物|もの}','food'],['すき','like']],'Describes the noun: “Japan の food” = Japanese food.','I like Japanese food.'],
+/* ---- ついか ---- */
+['わたし[]{日本人|にほんじん}です。','は',[['{日本人|にほんじん}','Japanese person']],'Topic of the sentence: “As for me…”','I am Japanese.'],
+['こちら[]{山田|やまだ}さんです。','は',[['こちら','this person (polite)']],'Topic of the sentence: “As for this person…”','This is Ms. Yamada.'],
+['わたしの{趣味|しゅみ}[]{音楽|おんがく}です。','は',[['{趣味|しゅみ}','hobby'],['{音楽|おんがく}','music']],'Topic of the sentence: “As for my hobby…”','My hobby is music.'],
+['トイレ[]どこですか。','は',[['トイレ','restroom'],['どこ','where']],'Topic of a question: “As for the restroom, where…?”','Where is the restroom?'],
+['この{本|ほん}[]いくらですか。','は',[['{本|ほん}','book'],['いくら','how much']],'Topic of a question: “As for this book, how much…?”','How much is this book?'],
+['わたしは{学生|がくせい}です。{田中|たなか}さん[]{先生|せんせい}です。','は',[['{学生|がくせい}','student'],['{先生|せんせい}','teacher']],'Topic / contrast: “I am a student; as for Mr. Tanaka, he is a teacher.”','I am a student. Mr. Tanaka is a teacher.'],
+['ここに{鉛筆|えんぴつ}[]あります。','が',[['{鉛筆|えんぴつ}','pencil'],['あります','there is (thing)']],'The thing that exists (います / あります) takes が.','There is a pencil here.'],
+['{教室|きょうしつ}に{学生|がくせい}[]います。','が',[['{教室|きょうしつ}','classroom'],['{学生|がくせい}','student'],['います','there is (person)']],'The thing that exists (います / あります) takes が.','There is a student in the classroom.'],
+['かばんの{中|なか}に{本|ほん}[]あります。','が',[['かばん','bag'],['{中|なか}','inside'],['{本|ほん}','book']],'The thing that exists (います / あります) takes が.','There is a book in the bag.'],
+['だれ[]{日本語|にほんご}の{先生|せんせい}ですか。','が',[['だれ','who'],['{日本語|にほんご}','Japanese'],['{先生|せんせい}','teacher']],'A question word as the subject (“Who…?”) takes が.','Who is the Japanese teacher?'],
+['どの{季節|きせつ}[]すきですか。','が',[['どの','which'],['{季節|きせつ}','season'],['すき','like']],'The thing you like takes が (すき, きらい, ほしい).','Which season do you like?'],
+['{雪|ゆき}[]ふっています。','が',[['{雪|ゆき}','snow'],['ふっています','is falling']],'Weather or an event happening in front of you takes が.','It is snowing.'],
+['{毎日|まいにち}{日本語|にほんご}[]{勉強|べんきょう}します。','を',[['{毎日|まいにち}','every day'],['{日本語|にほんご}','Japanese'],['{勉強|べんきょう}します','study']],'The object of an action takes を.','I study Japanese every day.'],
+['{朝|あさ}ごはん[]{食|た}べます。','を',[['{朝|あさ}ごはん','breakfast'],['{食|た}べます','eat']],'The object of an action takes を.','I eat breakfast.'],
+['テレビ[]{見|み}ました。','を',[['テレビ','TV'],['{見|み}ました','watched']],'The object of an action takes を.','I watched TV.'],
+['{新聞|しんぶん}[]{読|よ}みます。','を',[['{新聞|しんぶん}','newspaper'],['{読|よ}みます','read']],'The object of an action takes を.','I read the newspaper.'],
+['{友達|ともだち}にメール[]{書|か}きました。','を',[['{友達|ともだち}','friend'],['メール','email'],['{書|か}きました','wrote']],'The object of an action takes を.','I wrote an email to my friend.'],
+['ギター[]ひきます。','を',[['ギター','guitar'],['ひきます','play (string instrument)']],'The object of an action takes を.','I play the guitar.'],
+['{写真|しゃしん}[]とります。','を',[['{写真|しゃしん}','photo'],['とります','take']],'The object of an action takes を.','I take photos.'],
+['{家|いえ}[]テレビを{見|み}ます。','で',[['{家|いえ}','home'],['テレビ','TV'],['{見|み}ます','watch']],'The place where an action happens takes で.','I watch TV at home.'],
+['{学校|がっこう}[]{昼|ひる}ごはんを{食|た}べます。','で',[['{学校|がっこう}','school'],['{昼|ひる}ごはん','lunch'],['{食|た}べます','eat']],'The place where an action happens takes で.','I eat lunch at school.'],
+['バス[]{会社|かいしゃ}に{行|い}きます。','で',[['バス','bus'],['{会社|かいしゃ}','company'],['{行|い}きます','go']],'Means of transportation: “by bus”.','I go to the office by bus.'],
+['スプーン[]スープを{飲|の}みます。','で',[['スプーン','spoon'],['スープ','soup'],['{飲|の}みます','drink / have']],'A tool: “with a spoon”.','I have soup with a spoon.'],
+['{公園|こうえん}[]{友達|ともだち}と{遊|あそ}びます。','で',[['{公園|こうえん}','park'],['{友達|ともだち}','friend'],['{遊|あそ}びます','play / hang out']],'The place where an action happens takes で.','I hang out with my friend at the park.'],
+['{英語|えいご}[]{手紙|てがみ}を{書|か}きます。','で',[['{英語|えいご}','English'],['{手紙|てがみ}','letter'],['{書|か}きます','write']],'A language used: “in English”.','I write letters in English.'],
+['{八時|はちじ}[]{学校|がっこう}に{行|い}きます。','に',[['{八時|はちじ}','8 o’clock'],['{学校|がっこう}','school'],['{行|い}きます','go']],'A specific clock time takes に.','I go to school at 8 o’clock.'],
+['{姉|あね}[]メールを{書|か}きました。','に',[['{姉|あね}','my older sister'],['メール','email'],['{書|か}きました','wrote']],'The person you do something to takes に.','I wrote an email to my older sister.'],
+['{机|つくえ}の{上|うえ}[]{本|ほん}があります。','に',[['{机|つくえ}','desk'],['{上|うえ}','on top'],['{本|ほん}','book']],'The place where something exists (います / あります) takes に.','There is a book on the desk.'],
+['{先生|せんせい}[]{質問|しつもん}をします。','に',[['{先生|せんせい}','teacher'],['{質問|しつもん}','question']],'The person you ask takes に.','I ask the teacher a question.'],
+['{三時|さんじ}[]{友達|ともだち}に{会|あ}います。','に',[['{三時|さんじ}','3 o’clock'],['{友達|ともだち}','friend'],['{会|あ}います','meet']],'A specific clock time takes に.','I will meet a friend at 3 o’clock.'],
+['ここ[]{来|き}てください。','に',[['ここ','here'],['{来|き}てください','please come']],'The destination of go / come / return takes に.','Please come here.'],
+['{母|はは}[]{父|ちち}は{先生|せんせい}です。','と',[['{母|はは}','my mother'],['{父|ちち}','my father'],['{先生|せんせい}','teacher']],'Connects nouns: “mother and father”.','My mother and father are teachers.'],
+['テニス[]サッカーがすきです。','と',[['テニス','tennis'],['サッカー','soccer'],['すき','like']],'Connects nouns: “tennis and soccer”.','I like tennis and soccer.'],
+['{姉|あね}[]{公園|こうえん}に{行|い}きました。','と',[['{姉|あね}','my older sister'],['{公園|こうえん}','park'],['{行|い}きました','went']],'Together with someone: “with my sister”.','I went to the park with my older sister.'],
+['{先生|せんせい}[]いっしょに{写真|しゃしん}をとりました。','と',[['{先生|せんせい}','teacher'],['いっしょに','together'],['{写真|しゃしん}','photo']],'Together with someone: “with the teacher”.','I took a photo together with the teacher.'],
+['{兄|あに}[]{弟|おとうと}がいます。','と',[['{兄|あに}','my older brother'],['{弟|おとうと}','my younger brother'],['います','there is (person)']],'Connects nouns: “older brother and younger brother”.','I have an older brother and a younger brother.'],
+['{朝|あさ}ごはんにパン[]たまごを{食|た}べます。','と',[['{朝|あさ}ごはん','breakfast'],['パン','bread'],['たまご','egg']],'Connects nouns: “bread and eggs”.','I eat bread and eggs for breakfast.'],
+['{日本|にほん}[]アメリカまで{飛行機|ひこうき}で{十二時間|じゅうにじかん}です。','から',[['{飛行機|ひこうき}','airplane'],['{十二時間|じゅうにじかん}','12 hours']],'Starting point: “from Japan to America”.','It takes 12 hours by plane from Japan to America.'],
+['{夜|よる}{七時|しちじ}[]{九時|くじ}まで{宿題|しゅくだい}をします。','から',[['{夜|よる}','night'],['{宿題|しゅくだい}','homework']],'Starting time: “from 7 until 9”.','I do homework from 7 to 9 at night.'],
+['{家|いえ}[]{会社|かいしゃ}まで{電車|でんしゃ}で{三十分|さんじゅっぷん}です。','から',[['{家|いえ}','home'],['{会社|かいしゃ}','company'],['{電車|でんしゃ}','train'],['{三十分|さんじゅっぷん}','30 minutes']],'Starting point: “from home to the office”.','It takes 30 minutes by train from home to the office.'],
+['{八月|はちがつ}[]{九月|くがつ}まで{休|やす}みです。','から',[['{八月|はちがつ}','August'],['{九月|くがつ}','September'],['{休|やす}み','holiday / break']],'Starting point: “from August until September”.','The break is from August to September.'],
+['{何時|なんじ}[]{何時|なんじ}までですか。','から',[['{何時|なんじ}','what time']],'Starting time: “from what time until what time?”','From what time to what time is it?'],
+['{十二月|じゅうにがつ}[]{二月|にがつ}まで{寒|さむ}いです。','から',[['{十二月|じゅうにがつ}','December'],['{二月|にがつ}','February'],['{寒|さむ}い','cold']],'Starting point: “from December until February”.','It is cold from December to February.'],
+['{夜|よる}{十時|じゅうじ}から{十一時|じゅういちじ}[]{勉強|べんきょう}します。','まで',[['{夜|よる}','night'],['{勉強|べんきょう}します','study']],'End point: “from 10 until 11”.','I study from 10 to 11 at night.'],
+['{銀行|ぎんこう}は{九時|くじ}から{三時|さんじ}[]です。','まで',[['{銀行|ぎんこう}','bank']],'End point: “from 9 until 3”.','The bank is open from 9 to 3.'],
+['ここから{空港|くうこう}[]{電車|でんしゃ}で{一時間|いちじかん}です。','まで',[['{空港|くうこう}','airport'],['{電車|でんしゃ}','train'],['{一時間|いちじかん}','1 hour']],'End point: “from here to the airport”.','It takes one hour by train from here to the airport.'],
+['{夏休み|なつやすみ}は{七月|しちがつ}から{八月|はちがつ}[]です。','まで',[['{夏休み|なつやすみ}','summer vacation'],['{七月|しちがつ}','July'],['{八月|はちがつ}','August']],'End point: “from July until August”.','Summer vacation is from July to August.'],
+['{土曜日|どようび}から{日曜日|にちようび}[]{旅行|りょこう}します。','まで',[['{土曜日|どようび}','Saturday'],['{日曜日|にちようび}','Sunday'],['{旅行|りょこう}します','travel']],'End point: “from Saturday until Sunday”.','I travel from Saturday to Sunday.'],
+['{日曜日|にちようび}から{水曜日|すいようび}[]{休|やす}みです。','まで',[['{日曜日|にちようび}','Sunday'],['{水曜日|すいようび}','Wednesday'],['{休|やす}み','day off']],'End point: “from Sunday until Wednesday”.','I am off from Sunday to Wednesday.'],
+['わたしはテニスをします。サッカー[]します。','も',[['テニス','tennis'],['サッカー','soccer']],'“Also / too”: adds the same thing again (replaces は / が / を).','I play tennis. I play soccer, too.'],
+['ここに{本|ほん}があります。{雑誌|ざっし}[]あります。','も',[['{本|ほん}','book'],['{雑誌|ざっし}','magazine']],'“Also / too”: adds the same thing again (replaces は / が / を).','There is a book here. There is a magazine, too.'],
+['{朝|あさ}ごはんを{食|た}べました。{昼|ひる}ごはん[]{食|た}べました。','も',[['{朝|あさ}ごはん','breakfast'],['{昼|ひる}ごはん','lunch']],'“Also / too”: adds the same thing again (replaces は / が / を).','I ate breakfast. I ate lunch, too.'],
+['{兄|あに}がいます。{姉|あね}[]います。','も',[['{兄|あに}','older brother'],['{姉|あね}','older sister']],'“Also / too”: adds the same thing again (replaces は / が / を).','I have an older brother. I have an older sister, too.'],
+['わたしは{先生|せんせい}です。{山田|やまだ}さん[]{先生|せんせい}です。','も',[['{先生|せんせい}','teacher']],'“Also / too”: adds the same thing again (replaces は / が / を).','I am a teacher. Ms. Yamada is a teacher, too.'],
+['この{本|ほん}はおもしろいです。あの{本|ほん}[]おもしろいです。','も',[['おもしろい','interesting'],['{本|ほん}','book']],'“Also / too”: adds the same thing again (replaces は / が / を).','This book is interesting. That book is interesting, too.'],
+['わたし[]{名前|なまえ}は{山田|やまだ}です。','の',[['{名前|なまえ}','name']],'Possession: “A の B” = A’s B (“my name”).','My name is Yamada.'],
+['{英語|えいご}[]{本|ほん}を{読|よ}みます。','の',[['{英語|えいご}','English'],['{本|ほん}','book'],['{読|よ}みます','read']],'Describes the noun: “English の book” = English book.','I read English books.'],
+['これは{誰|だれ}[]かばんですか。','の',[['{誰|だれ}','whose / who'],['かばん','bag']],'Possession: “whose bag?”','Whose bag is this?'],
+['わたし[]{友達|ともだち}はアメリカ{人|じん}です。','の',[['{友達|ともだち}','friend'],['アメリカ{人|じん}','American']],'Possession: “my friend”.','My friend is American.'],
+['{日本語|にほんご}[]{勉強|べんきょう}は{楽|たの}しいです。','の',[['{日本語|にほんご}','Japanese'],['{勉強|べんきょう}','studying'],['{楽|たの}しい','fun']],'Describes the noun: “Japanese の study” = studying Japanese.','Studying Japanese is fun.'],
+['{姉|あね}[]{誕生日|たんじょうび}は{五月|ごがつ}です。','の',[['{姉|あね}','my older sister'],['{誕生日|たんじょうび}','birthday'],['{五月|ごがつ}','May']],'Possession: “my sister’s birthday”.','My older sister’s birthday is in May.']
+];
+const Q=RAW.map(([s,a,h,c,e])=>({s,a,h,c,e}));
+
+/* ---------- ユーティリティ ---------- */
+const $=s=>document.querySelector(s);
+const app=$('#app');
+const ruby=s=>s.replace(/\{([^|}]+)\|([^}]+)\}/g,'<ruby>$1<rt>$2</rt></ruby>');
+const blank=(cls='',txt='')=>`<span class="blank ${cls}" id="blank">${txt}</span>`;
+const sentence=q=>ruby(q.s).replace('[]',blank());
+const solved=q=>ruby(q.s).replace('[]',`<mark>${q.a}</mark>`);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const JOSHI='<ruby>助詞<rt>じょし</rt></ruby>';
+const LIVES=5, TIME=15;
+
+function loadBest(m){try{return +localStorage.getItem('jh-best-'+m)||0}catch(e){return 0}}
+function saveBest(m,v){try{localStorage.setItem('jh-best-'+m,String(v))}catch(e){}}
+
+function loadSeen(){try{return new Set(JSON.parse(localStorage.getItem('jh-seen')||'[]'))}catch(e){return new Set()}}
+function saveSeen(s){try{localStorage.setItem('jh-seen',JSON.stringify([...s]))}catch(e){}}
+/* 助詞ごとに1もん + ランダム2もん。さいきん出た もんだいは さけて、ぜんぶ出たら リセット */
+function pickRound(){
+  const seen=loadSeen();
+  const first=P.map(p=>{
+    const all=Q.filter(q=>q.a===p);
+    let c=all.filter(q=>!seen.has(q.s));
+    if(!c.length){all.forEach(q=>seen.delete(q.s));c=all}
+    return shuffle(c)[0];
+  });
+  let pool=shuffle(Q.filter(q=>!first.includes(q)&&!seen.has(q.s)));
+  if(pool.length<2)pool=pool.concat(shuffle(Q.filter(q=>!first.includes(q)&&!pool.includes(q))));
+  const round=first.concat(pool.slice(0,2));
+  round.forEach(q=>seen.add(q.s));
+  saveSeen(seen);
+  return shuffle(round);
+}
+
+/* ---------- ゲームのじょうたい ---------- */
+let S=null, timer=null;
+
+function showStart(){
+  clearInterval(timer);
+  const m=S&&S.mode||'relax';
+  app.innerHTML=`
+  <div class="title"><div class="seal" aria-hidden="true">助</div><h1>じょし<br>ハンコ</h1></div>
+  <p class="tag">${JOSHI}を えらんで、ブランクに ハンコを おそう。<br>Pick the right particle and stamp it into the blank.</p>
+  <ul class="rules">
+    <li><b>1</b><span>ぶんの ブランクに 入る ${JOSHI} を、10この ハンコから えらぶ。<br><small>Choose from は・が・を・で・に・と・から・まで・も・の.</small></span></li>
+    <li><b>2</b><span>つづけて あたると コンボ！ ヒントを 見ると 50てん へる。<br><small>Chain correct answers for bonus points.</small></span></li>
+    <li><b>3</b><span>ハートは ${LIVES}つ。12もん クリア を めざそう。<br><small>You have ${LIVES} lives for 12 questions.</small></span></li>
+  </ul>
+  <fieldset class="modes"><legend>モード / Mode</legend>
+    <input type="radio" name="mode" id="m1" value="relax" ${m==='relax'?'checked':''}><label for="m1"><strong>ゆっくり</strong><span>No timer. Take your time.</span></label>
+    <input type="radio" name="mode" id="m2" value="challenge" ${m==='challenge'?'checked':''}><label for="m2"><strong>チャレンジ</strong><span>${TIME} seconds per question.</span></label>
+  </fieldset>
+  <button class="go" id="start">スタート</button>
+  <p class="best" id="best"></p>`;
+  const upd=()=>{const mode=document.querySelector('input[name=mode]:checked').value;$('#best').textContent=`ベストスコア / Best: ${loadBest(mode)}てん`};
+  document.querySelectorAll('input[name=mode]').forEach(i=>i.addEventListener('change',upd));
+  upd();
+  $('#start').addEventListener('click',()=>newGame(document.querySelector('input[name=mode]:checked').value,pickRound()));
+}
+
+function newGame(mode,qs){
+  S={mode,qs,i:0,score:0,combo:0,maxCombo:0,lives:LIVES,right:0,log:[],stats:Object.fromEntries(P.map(p=>[p,{n:0,c:0}])),hint:false,done:false,t:TIME};
+  renderQ();
+}
+
+function hud(){
+  const lives=Array.from({length:LIVES},(_,k)=>`<i class="${k<S.lives?'':'off'}"></i>`).join('');
+  const prog=S.qs.map((_,k)=>`<i class="${k<S.i?'done':k===S.i?'now':''}"></i>`).join('');
+  return `<header class="hud">
+    <div class="q">もんだい ${S.i+1}<small> / ${S.qs.length}</small></div>
+    <div class="score"><span id="score">${S.score}</span><small>てん</small></div>
+    <div class="lives" role="img" aria-label="のこりハート ${S.lives}">${lives}</div>
+    <div class="combo" id="combo">${S.combo>=2?`れんぞく ×${S.combo}`:''}</div>
+    <div class="prog" aria-hidden="true">${prog}</div>
+  </header>`;
+}
+
+function renderQ(){
+  clearInterval(timer);
+  const q=S.qs[S.i];
+  S.hint=false;S.done=false;S.t=TIME;
+  app.innerHTML=`${hud()}
+  ${S.mode==='challenge'?'<div class="timer" id="timer"><i id="tbar"></i></div>':''}
+  <section class="card" id="card">
+    <p class="sentence" id="sentence" lang="ja">${sentence(q)}</p>
+    <p class="en" lang="en">${q.e}</p>
+    <ul class="hints" aria-label="ことばのヒント">${q.h.map(([j,e])=>`<li lang="ja">${ruby(j)}<em lang="en">${e}</em></li>`).join('')}</ul>
+  </section>
+  <div class="cluebox"><button class="ghost" id="clueBtn">ヒントを見る <small>−50てん</small></button><p id="clue" hidden></p></div>
+  <div class="stamps" role="group" aria-label="${JOSHI.replace(/<[^>]+>/g,'')}を えらぶ">
+    ${P.map((p,k)=>`<button class="stamp ${p.length>1?'long':''}" data-p="${p}"><span class="k" aria-hidden="true">${(k+1)%10}</span>${p}</button>`).join('')}
+  </div>
+  <div class="panel" id="panel" aria-live="polite"></div>`;
+  $('#clueBtn').addEventListener('click',()=>{
+    S.hint=true;const c=$('#clue');c.textContent=q.c.replace(/^(.*)$/,'$1');c.hidden=false;$('#clueBtn').hidden=true;
+  });
+  document.querySelectorAll('.stamp').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.p)));
+  if(S.mode==='challenge'){
+    const bar=$('#tbar'),box=$('#timer');
+    timer=setInterval(()=>{
+      S.t=Math.max(0,S.t-.1);
+      bar.style.transform=`scaleX(${S.t/TIME})`;
+      box.classList.toggle('low',S.t<=5);
+      if(S.t<=0)answer(null);
+    },100);
+  }
+}
+
+function answer(p){
+  if(S.done)return;
+  S.done=true;clearInterval(timer);
+  const q=S.qs[S.i];
+  const ok=p===q.a;
+  const st=S.stats[q.a];st.n++;
+  let pts=0;
+  if(ok){
+    st.c++;S.right++;
+    const base=S.hint?50:100;
+    const combo=Math.min(S.combo,5)*20;
+    const time=S.mode==='challenge'?Math.round(S.t/TIME*50):0;
+    pts=base+combo+time;
+    S.score+=pts;S.combo++;S.maxCombo=Math.max(S.maxCombo,S.combo);
+  }else{
+    S.combo=0;S.lives--;
+  }
+  S.log.push({q,ok,p});
+
+  const bl=$('#blank');
+  if(p){bl.textContent=p;bl.className='blank on '+(ok?'ok':'bad');}
+  else{bl.textContent='？';}
+  document.querySelectorAll('.stamp').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.p===q.a)b.classList.add('right');
+    else if(b.dataset.p===p)b.classList.add('wrong');
+  });
+  if(!ok)$('#card').classList.add('shake');
+  $('#clueBtn').hidden=true;
+  $('#clue').hidden=true;
+  $('#score').textContent=S.score;
+  $('#combo').textContent=S.combo>=2?`れんぞく ×${S.combo}`:'';
+  document.querySelector('.lives').innerHTML=Array.from({length:LIVES},(_,k)=>`<i class="${k<S.lives?'':'off'}"></i>`).join('');
+
+  const last=S.i===S.qs.length-1||S.lives<=0;
+  const head=ok?`<h2>せいかい！ <small>+${pts}てん</small></h2>`:`<h2>${p?'ざんねん…':'じかんぎれ'}</h2>`;
+  const body=ok?`<p lang="en">「${q.a}」 ${q.c}</p>`:`<p>こたえは「<b>${q.a}</b>」でした。</p><p lang="en">${q.c}</p><p lang="ja">${solved(q)}</p>`;
+  $('#panel').innerHTML=`<div class="res ${ok?'good':''}">${head}${body}<button class="next" id="next">${last?'けっかを見る':'つぎへ'}</button></div>`;
+  const nb=$('#next');
+  nb.addEventListener('click',next);
+  nb.focus({preventScroll:true});
+  nb.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+
+function next(){
+  if(S.lives<=0||S.i>=S.qs.length-1){showEnd();return}
+  S.i++;renderQ();
+  window.scrollTo(0,0);
+}
+
+function rankOf(n,total){
+  const r=n/total;
+  if(r===1)return['じょしマスター','Perfect run!'];
+  if(r>=.8)return['たつじん','Excellent!'];
+  if(r>=.6)return['いちにんまえ','Solid work.'];
+  if(r>=.4)return['みならい','Getting there.'];
+  return['ひよっこ','Keep stamping!'];
+}
+
+function showEnd(){
+  clearInterval(timer);
+  const total=S.qs.length,answered=S.log.length;
+  const cleared=S.lives>0&&answered===total;
+  const [rk,msg]=rankOf(S.right,total);
+  const prev=loadBest(S.mode);
+  const isBest=S.score>prev;
+  if(isBest)saveBest(S.mode,S.score);
+  const missed=S.log.filter(l=>!l.ok).map(l=>l.q);
+  const bars=P.filter(p=>S.stats[p].n>0).map(p=>{
+    const {n,c}=S.stats[p];
+    return `<li><b>${p}</b><span class="tr"><i style="width:${Math.round(c/n*100)}%"></i></span><span class="n">${c}/${n}</span></li>`;
+  }).join('');
+  app.classList.add('end');
+  app.innerHTML=`
+  <h2>${cleared?'クリア！':'ゲームオーバー'}</h2>
+  <div class="rank"><div class="seal" aria-hidden="true" style="font-size:22px">${rk.slice(0,2)}</div><div><div class="big">${S.score}<small style="font:500 15px var(--body)"> てん</small></div><p class="sub">${rk} ・ ${msg}${isBest?' <b>ベスト こうしん！</b>':''}</p></div></div>
+  <p class="sub">せいかい ${S.right} / ${total}もん ・ さいだいコンボ ×${S.maxCombo}</p>
+  <h3>${JOSHI}ごとの けっか</h3>
+  <ul class="bars">${bars}</ul>
+  ${missed.length?`<h3>まちがえた もんだい</h3><ul class="miss" lang="ja">${missed.map(q=>`<li>${solved(q)}<div class="en" lang="en" style="font:500 14px/1.5 var(--body);padding-bottom:6px">${q.e}</div></li>`).join('')}</ul>`:''}
+  <div class="row">
+    ${missed.length?'<button class="ghost" id="again-miss">まちがえた もんだいだけ やる</button>':''}
+    <button class="go" id="again">もういちど</button>
+    <button class="ghost" id="menu">モードを えらぶ</button>
+  </div>`;
+  $('#again').addEventListener('click',()=>{app.classList.remove('end');newGame(S.mode,pickRound())});
+  $('#menu').addEventListener('click',()=>{app.classList.remove('end');showStart()});
+  const am=$('#again-miss');
+  if(am)am.addEventListener('click',()=>{app.classList.remove('end');newGame(S.mode,shuffle(missed))});
+  window.scrollTo(0,0);
+}
+
+/* キーボード: 1〜8 でハンコ、Enter でつぎへ */
+document.addEventListener('keydown',e=>{
+  if(!S||!$('.stamps'))return;
+  if(!S.done&&/^[0-9]$/.test(e.key)){answer(P[(+e.key+9)%10]);return}
+  if(S.done&&e.key==='Enter'&&!(e.target instanceof HTMLButtonElement)){next()}
+});
+
+showStart();
+</script>
+</body>
+</html>
